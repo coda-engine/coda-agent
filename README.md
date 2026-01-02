@@ -157,25 +157,26 @@ coda-agent/
 - ✅ Session management
 - ✅ Docker containerization
 
-### v0.2.0 - Multi-LLM & Observability
-- 🔄 Multi-LLM support (OpenAI, Anthropic, Google)
-- 🔄 Chain of thought display
-- 🔄 Token tracking and cost calculation
-- 🔄 Tool evaluation system
+### v0.2.0 - Multi-LLM & Observability (Completed)
+- ✅ Multi-LLM support (OpenAI, Anthropic, Google)
+- ✅ Chain of thought display
+- ✅ Token tracking and cost calculation
+- ✅ Tool evaluation system
 
-### v0.3.0 - Advanced Context & Tracing
-- 📅 Context summarization
-- 📅 Thread branching
-- 📅 OpenTelemetry tracing
-- 📅 Session export/import
+### v0.3.0 - Advanced Context & Tracing (Completed)
+- ✅ Context summarization
+- ✅ Thread branching
+- ✅ OpenTelemetry tracing
+- ✅ Session export/import
 
-### v0.4.0 - Analytics & Insights
-- 📅 Analytics dashboard
-- 📅 Usage metrics
-- 📅 Tool analytics
-- 📅 File attachments
+### v0.4.0 - Analytics & Insights (Completed)
+- ✅ Analytics dashboard
+- ✅ Usage metrics
+- ✅ Tool analytics
+- ✅ File attachments
+- ✅ Feedback system
 
-### v1.0.0 - Production Ready
+### v1.0.0 - Production Ready (Next)
 - 📅 User authentication
 - 📅 Multi-tenancy
 - 📅 Rate limiting

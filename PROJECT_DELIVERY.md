@@ -264,40 +264,34 @@ Transform your MCP Server (solver/analytics tools) from a developer-only API int
     -   Added Prometheus instrumentation for FastAPI metrics (`/metrics`).t
 ---
 
-## Sprint 1 Breakdown (Current)
+## Sprint 13 Planning (Next)
 
 ### Goal
-Setup project foundation and basic infrastructure
+Production Readiness (Authentication & Security)
 
-### Stories (21 points total)
+### Stories (34 points total)
 
-1. **Setup Project Structure** (3 points) - ✅ **COMPLETE**
-   - ✅ Documentation created
-   - ⏳ Backend scaffolding (next)
-   - ⏳ Frontend scaffolding (next)
+1. **Authentication System** (13 points)
+   - User table & JWT implementation
+   - Login/Register endpoints
+   - Frontend Auth Context
+   - Protected Routes
 
-2. **Backend API Foundation** (5 points)
-   - FastAPI application setup
-   - Database models
-   - Basic CRUD endpoints
+2. **Rate Limiting** (8 points)
+   - Redis-backed rate limiter
+   - Per-user/IP limits
+   - 429 Error handling
 
-3. **Frontend Scaffolding** (5 points)
-   - React + TypeScript setup
-   - TailwindCSS configuration
-   - Component library foundation
-
-4. **LLM Integration - OpenAI** (8 points)
-   - OpenAI client setup
-   - Streaming response handler
-   - Token counting
+3. **Multi-tenancy Setup** (8 points)
+   - Organization/Tenant schema
+   - Data isolation checks
+   - Tenant middleware
 
 ### Success Criteria
-- [ ] All services running in Docker
-- [ ] Database migrations working
-- [ ] Basic API endpoints functional
-- [ ] Chat interface renders
-- [ ] OpenAI integration working
-- [ ] Tests passing (>80% coverage)
+- [ ] Users can sign up and log in
+- [ ] Unauthenticated requests are blocked
+- [ ] Rate limits prevent abuse
+- [ ] Data is isolated by user/tenant
 
 ---
 

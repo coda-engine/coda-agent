@@ -10,6 +10,11 @@
 - **Value Proposition**: Generic agent with multi-LLM support + specialized decision/analytics tools
 - **Go-to-Market**: Freemium model (BYOK) with premium hosted models
 
+### Current Status (Release v0.4.0)
+- **Completed**: Epics 1, 2, 3, 4, 5, 6
+- **Pending**: Epic 7 (Production Readiness)
+- **Next Sprint**: Sprint 13 (Authentication & Security)
+
 ---
 
 ## Product Vision
