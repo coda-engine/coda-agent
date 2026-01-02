@@ -1,0 +1,270 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "CP-SAT Solver",
+        "version": "2.3.0",
+        "description": "Universal CP-SAT solver supporting Linear, Interval, Cumulative, and Conditional constraints."
+    },
+    "servers": [
+        {
+            "url": "https://solver-37559127936.us-east1.run.app"
+        }
+    ],
+    "paths": {
+        "/": {
+            "post": {
+                "operationId": "solve_model",
+                "summary": "Solve a CP-SAT model",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SolveRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Solution found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SolveResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "VariableSpec": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "type"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "int",
+                            "bool",
+                            "interval",
+                            "optional_interval"
+                        ],
+                        "description": "Decision variable type. 'optional_interval' allows the solver to skip tasks."
+                    },
+                    "lb": {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Lower Bound (int only)"
+                    },
+                    "ub": {
+                        "type": "integer",
+                        "default": 1000000,
+                        "description": "Upper Bound (int only)"
+                    },
+                    "start": {
+                        "type": "string",
+                        "description": "Start variable name (for intervals)"
+                    },
+                    "end": {
+                        "type": "string",
+                        "description": "End variable name (for intervals)"
+                    },
+                    "size": {
+                        "oneOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ],
+                        "description": "Duration. Can be a fixed integer OR a variable name."
+                    },
+                    "is_present": {
+                        "type": "string",
+                        "description": "Name of the boolean variable that controls if this optional_interval is active."
+                    }
+                }
+            },
+            "ConstraintSpec": {
+                "type": "object",
+                "required": [
+                    "type"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "linear",
+                            "no_overlap",
+                            "all_different",
+                            "cumulative",
+                            "bool_or",
+                            "bool_and"
+                        ]
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "enforce_if": {
+                        "type": "string",
+                        "description": "Name of a boolean variable. If present, constraint is only enforced when this var is True."
+                    },
+                    "expr": {
+                        "$ref": "#/components/schemas/LinearExpr"
+                    },
+                    "op": {
+                        "type": "string",
+                        "enum": [
+                            "<=",
+                            ">=",
+                            "=="
+                        ]
+                    },
+                    "rhs": {
+                        "type": "integer"
+                    },
+                    "intervals": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "List of interval variable names (for no_overlap and cumulative)"
+                    },
+                    "vars": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "List of variable names (for all_different, bool_or, bool_and)"
+                    },
+                    "demands": {
+                        "type": "array",
+                        "items": {
+                            "oneOf": [
+                                {
+                                    "type": "integer"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "description": "Resource usage per interval (for cumulative). Can be ints or variable names."
+                    },
+                    "capacity": {
+                        "oneOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ],
+                        "description": "Total resource limit (for cumulative). Can be int or variable name."
+                    }
+                }
+            },
+            "LinearExpr": {
+                "type": "object",
+                "properties": {
+                    "vars": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "coefs": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "SolveRequest": {
+                "type": "object",
+                "required": [
+                    "variables",
+                    "constraints"
+                ],
+                "properties": {
+                    "variables": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/VariableSpec"
+                        }
+                    },
+                    "constraints": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ConstraintSpec"
+                        }
+                    },
+                    "objective": {
+                        "$ref": "#/components/schemas/ObjectiveSpec"
+                    },
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "max_time_seconds": {
+                                "type": "number",
+                                "default": 10.0
+                            },
+                            "log_search_progress": {
+                                "type": "boolean",
+                                "default": false
+                            }
+                        }
+                    }
+                }
+            },
+            "ObjectiveSpec": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "min",
+                            "max"
+                        ]
+                    },
+                    "expr": {
+                        "$ref": "#/components/schemas/LinearExpr"
+                    }
+                }
+            },
+            "SolveResponse": {
+                "type": "object",
+                "required": [
+                    "status"
+                ],
+                "properties": {
+                    "status": {
+                        "type": "string"
+                    },
+                    "objective_value": {
+                        "type": "number"
+                    },
+                    "variables": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,150 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Min Cost Flow Solver",
+        "description": "A deterministic optimization engine for assignment, routing, and supply chain problems. It minimizes the total cost of moving resources through a network of nodes and edges.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://mcf-solver-37559127936.us-east1.run.app",
+            "description": "Production Solver Endpoint"
+        }
+    ],
+    "paths": {
+        "/": {
+            "post": {
+                "summary": "Solve Optimization Problem",
+                "operationId": "solveMinCostFlow",
+                "description": "Send a network graph (nodes and edges) to calculate the optimal flow. Use this for logistics (shipping goods), scheduling (assigning shifts), or routing (finding cheapest paths).",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "nodes": {
+                                        "type": "array",
+                                        "description": "List of all locations, people, or entities involved in the problem.",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string",
+                                                    "description": "Unique ID (e.g., 'Factory_NY', 'Alice')."
+                                                },
+                                                "balance": {
+                                                    "type": "integer",
+                                                    "description": "Net supply or demand. Positive (+N) means it produces/has N units. Negative (-N) means it needs/consumes N units. Zero (0) means it is a transfer point. IMPORTANT: The sum of all balances in the list must equal 0."
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "balance"
+                                            ]
+                                        }
+                                    },
+                                    "edges": {
+                                        "type": "array",
+                                        "description": "Possible connections or pathways between nodes.",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "from_node": {
+                                                    "type": "string",
+                                                    "description": "ID of the source node."
+                                                },
+                                                "to_node": {
+                                                    "type": "string",
+                                                    "description": "ID of the destination node."
+                                                },
+                                                "capacity": {
+                                                    "type": "integer",
+                                                    "description": "Maximum number of units that can flow through this connection. Use a very large number (e.g., 999999) if unlimited.",
+                                                    "minimum": 0
+                                                },
+                                                "unit_cost": {
+                                                    "type": "integer",
+                                                    "description": "Cost to move ONE unit across this edge. To maximize something, use negative costs.",
+                                                    "minimum": -1000000
+                                                }
+                                            },
+                                            "required": [
+                                                "from_node",
+                                                "to_node",
+                                                "capacity",
+                                                "unit_cost"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "nodes",
+                                    "edges"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful optimization result.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "OPTIMAL",
+                                                "FEASIBLE",
+                                                "INFEASIBLE",
+                                                "UNBALANCED"
+                                            ],
+                                            "description": "Result status. 'OPTIMAL' means the best possible solution was found."
+                                        },
+                                        "total_cost": {
+                                            "type": "integer",
+                                            "description": "The minimized total cost for the entire network."
+                                        },
+                                        "flows": {
+                                            "type": "array",
+                                            "description": "The specific actions to take (which edges to use and how much to send).",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "from": {
+                                                        "type": "string"
+                                                    },
+                                                    "to": {
+                                                        "type": "string"
+                                                    },
+                                                    "flow": {
+                                                        "type": "integer",
+                                                        "description": "Number of units to move."
+                                                    },
+                                                    "cost": {
+                                                        "type": "integer",
+                                                        "description": "Total cost for this specific movement (flow * unit_cost)."
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation Error (e.g., Supply != Demand, or missing JSON)."
+                    },
+                    "500": {
+                        "description": "Internal Solver Error."
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,117 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Max Flow Solver",
+        "description": "Calculates the maximum possible throughput (flow) between a source and a sink in a network with limited capacities.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://smf-solver-37559127936.us-east1.run.app"
+        }
+    ],
+    "paths": {
+        "/": {
+            "post": {
+                "summary": "Solve Maximum Flow",
+                "operationId": "solveMaxFlow",
+                "description": "Determines the bottleneck of a network. Use this to find out how many units (data, cars, fluids) can be pushed from a start point to an end point.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "source_node": {
+                                        "type": "string",
+                                        "description": "The ID of the starting point (Producer)."
+                                    },
+                                    "sink_node": {
+                                        "type": "string",
+                                        "description": "The ID of the ending point (Consumer)."
+                                    },
+                                    "edges": {
+                                        "type": "array",
+                                        "description": "Network connections with capacity limits.",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "from_node": {
+                                                    "type": "string"
+                                                },
+                                                "to_node": {
+                                                    "type": "string"
+                                                },
+                                                "capacity": {
+                                                    "type": "integer",
+                                                    "description": "The maximum amount that can pass through this link.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "from_node",
+                                                "to_node",
+                                                "capacity"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "source_node",
+                                    "sink_node",
+                                    "edges"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful calculation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "OPTIMAL",
+                                                "ERROR"
+                                            ]
+                                        },
+                                        "max_flow_value": {
+                                            "type": "integer",
+                                            "description": "The total amount of flow that successfully reached the sink."
+                                        },
+                                        "flows": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "from": {
+                                                        "type": "string"
+                                                    },
+                                                    "to": {
+                                                        "type": "string"
+                                                    },
+                                                    "flow": {
+                                                        "type": "integer"
+                                                    },
+                                                    "capacity_usage": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

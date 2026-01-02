@@ -1,0 +1,117 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Linear Assignment Solver",
+        "description": "Optimally pairs workers to tasks (or any two sets of items) to minimize total cost or maximize total value. Use this for 1-to-1 matching problems.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://linearsumassignment-solver-37559127936.us-east1.run.app"
+        }
+    ],
+    "paths": {
+        "/": {
+            "post": {
+                "summary": "Solve Assignment Problem",
+                "operationId": "solveLinearAssignment",
+                "description": "Matches two groups of items (e.g. Drivers to Riders, Jobs to Machines) based on a list of costs/scores for each possible pair.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "entries": {
+                                        "type": "array",
+                                        "description": "A list of all allowed pairings. If a pair is not listed, it is assumed impossible.",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "worker_id": {
+                                                    "type": "string",
+                                                    "description": "Unique ID of the provider (Row)."
+                                                },
+                                                "task_id": {
+                                                    "type": "string",
+                                                    "description": "Unique ID of the receiver (Column)."
+                                                },
+                                                "cost": {
+                                                    "type": "integer",
+                                                    "description": "The cost (or score) of this specific pairing."
+                                                }
+                                            },
+                                            "required": [
+                                                "worker_id",
+                                                "task_id",
+                                                "cost"
+                                            ]
+                                        }
+                                    },
+                                    "maximize": {
+                                        "type": "boolean",
+                                        "description": "Set to true if 'cost' represents a score/profit you want to MAXIMIZE. Default is false (minimize cost).",
+                                        "default": false
+                                    }
+                                },
+                                "required": [
+                                    "entries"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Optimal assignment found.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string"
+                                        },
+                                        "total_cost": {
+                                            "type": "integer"
+                                        },
+                                        "assignments": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "worker_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "task_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "cost": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "unassigned_workers": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "unassigned_tasks": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

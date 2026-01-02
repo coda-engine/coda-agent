@@ -1,0 +1,306 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Linear & MILP Solver",
+        "description": "A deterministic linear programming and mixed-integer programming solver. Use this tool to optimize resource allocation, blending, scheduling, or budgeting problems where variables must satisfy linear constraints to maximize or minimize an objective.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://cbc-solver-37559127936.us-east1.run.app",
+            "description": "Production Solver Endpoint"
+        }
+    ],
+    "paths": {
+        "/": {
+            "post": {
+                "operationId": "solveLinearProgram",
+                "summary": "Solve a Linear or Mixed-Integer Problem",
+                "description": "Takes a JSON definition of variables, linear constraints, and an objective function. Returns the optimal variable values and objective score. Supports Continuous, Integer, and Boolean variables.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SolveRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Solver execution completed (check status field for OPTIMAL/INFEASIBLE).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SolveResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid problem specification (e.g., mismatched coefficients)."
+                    },
+                    "500": {
+                        "description": "Internal solver error."
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "SolveRequest": {
+                "type": "object",
+                "required": [
+                    "variables",
+                    "constraints"
+                ],
+                "properties": {
+                    "variables": {
+                        "type": "array",
+                        "description": "List of decision variables to be optimized.",
+                        "items": {
+                            "$ref": "#/components/schemas/Variable"
+                        }
+                    },
+                    "constraints": {
+                        "type": "array",
+                        "description": "List of linear constraints (e.g., 2*x + 3*y <= 10).",
+                        "items": {
+                            "$ref": "#/components/schemas/Constraint"
+                        }
+                    },
+                    "objective": {
+                        "$ref": "#/components/schemas/Objective"
+                    },
+                    "solver_backend": {
+                        "type": "string",
+                        "description": "The backend engine to use. Use 'SCIP' for integers/mixed, 'GLOP' for pure linear speed.",
+                        "default": "GLOP",
+                        "enum": [
+                            "SCIP",
+                            "GLOP"
+                        ]
+                    },
+                    "timeout_ms": {
+                        "type": "integer",
+                        "description": "Maximum solver runtime in milliseconds.",
+                        "default": 15000
+                    }
+                },
+                "example": {
+                    "variables": [
+                        {
+                            "name": "budget_food",
+                            "type": "continuous",
+                            "lb": 200,
+                            "ub": "inf"
+                        },
+                        {
+                            "name": "budget_rent",
+                            "type": "continuous",
+                            "lb": 1000,
+                            "ub": 1000
+                        }
+                    ],
+                    "constraints": [
+                        {
+                            "name": "total_income",
+                            "type": "linear",
+                            "expr": {
+                                "vars": [
+                                    "budget_food",
+                                    "budget_rent"
+                                ],
+                                "coefs": [
+                                    1,
+                                    1
+                                ]
+                            },
+                            "op": "<=",
+                            "rhs": 3000
+                        }
+                    ],
+                    "objective": {
+                        "type": "max",
+                        "expr": {
+                            "vars": [
+                                "budget_food"
+                            ],
+                            "coefs": [
+                                1
+                            ]
+                        }
+                    },
+                    "solver_backend": "GLOP"
+                }
+            },
+            "Variable": {
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Unique identifier for the variable (e.g., 'allocation_A')."
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "The domain of the variable.\n- continuous: Any real number (default).\n- int: Whole numbers only.\n- bool: 0 or 1.",
+                        "enum": [
+                            "continuous",
+                            "int",
+                            "bool"
+                        ],
+                        "default": "continuous"
+                    },
+                    "lb": {
+                        "description": "Lower bound. Use number or '-inf'.",
+                        "oneOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "-inf",
+                                    "inf"
+                                ]
+                            }
+                        ],
+                        "default": 0
+                    },
+                    "ub": {
+                        "description": "Upper bound. Use number or 'inf'.",
+                        "oneOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "inf",
+                                    "-inf"
+                                ]
+                            }
+                        ],
+                        "default": "inf"
+                    }
+                }
+            },
+            "Constraint": {
+                "type": "object",
+                "required": [
+                    "type",
+                    "expr",
+                    "op",
+                    "rhs"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Optional name for debugging (e.g., 'budget_limit')."
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "linear"
+                        ],
+                        "default": "linear"
+                    },
+                    "expr": {
+                        "$ref": "#/components/schemas/LinearExpression"
+                    },
+                    "op": {
+                        "type": "string",
+                        "description": "The operator comparing the expression to the RHS.",
+                        "enum": [
+                            "<=",
+                            ">=",
+                            "=="
+                        ]
+                    },
+                    "rhs": {
+                        "type": "number",
+                        "description": "The Right-Hand Side constant value."
+                    }
+                }
+            },
+            "Objective": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "min",
+                            "max"
+                        ],
+                        "default": "min"
+                    },
+                    "expr": {
+                        "$ref": "#/components/schemas/LinearExpression"
+                    }
+                }
+            },
+            "LinearExpression": {
+                "type": "object",
+                "description": "Represents `sum(coef * var)`",
+                "required": [
+                    "vars",
+                    "coefs"
+                ],
+                "properties": {
+                    "vars": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "List of variable names. Must match names defined in `variables`."
+                    },
+                    "coefs": {
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        },
+                        "description": "List of coefficients corresponding to the variables. MUST be same length as `vars`."
+                    }
+                }
+            },
+            "SolveResponse": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "OPTIMAL",
+                            "FEASIBLE",
+                            "INFEASIBLE",
+                            "UNBOUNDED",
+                            "ABNORMAL",
+                            "NOT_SOLVED",
+                            "UNKNOWN"
+                        ]
+                    },
+                    "objective_value": {
+                        "type": "number",
+                        "nullable": true,
+                        "description": "The calculated value of the objective function (if optimal/feasible)."
+                    },
+                    "variables": {
+                        "type": "object",
+                        "description": "Map of variable names to their optimized values.",
+                        "additionalProperties": {
+                            "type": "number"
+                        }
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Error message or status details if not optimal."
+                    }
+                }
+            }
+        }
+    }
+}

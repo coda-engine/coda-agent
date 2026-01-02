@@ -1,0 +1,130 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "T-Test Solver",
+        "description": "Deterministic statistical engine. Supports Raw Data or Summary Stats.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://t-test-37559127936.us-east1.run.app"
+        }
+    ],
+    "paths": {
+        "/solve_stats_ttest": {
+            "post": {
+                "operationId": "solve_stats_ttest",
+                "summary": "Perform a T-Test",
+                "description": "Calculates T-statistics. You can provide EITHER raw arrays (sample1) OR summary stats (mean1, std1, n1).",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "test_type",
+                                    "data"
+                                ],
+                                "properties": {
+                                    "test_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "independent",
+                                            "one_sample",
+                                            "paired"
+                                        ]
+                                    },
+                                    "alternative": {
+                                        "type": "string",
+                                        "enum": [
+                                            "two-sided",
+                                            "less",
+                                            "greater"
+                                        ],
+                                        "default": "two-sided"
+                                    },
+                                    "alpha": {
+                                        "type": "number",
+                                        "default": 0.05
+                                    },
+                                    "data": {
+                                        "type": "object",
+                                        "description": "Data payload. Pick the keys that match your data. Do NOT invent new keys.",
+                                        "properties": {
+                                            "sample1": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                },
+                                                "description": "Raw data for Group 1"
+                                            },
+                                            "sample2": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                },
+                                                "description": "Raw data for Group 2"
+                                            },
+                                            "mean1": {
+                                                "type": "number",
+                                                "description": "Mean of Group 1"
+                                            },
+                                            "std1": {
+                                                "type": "number",
+                                                "description": "StdDev of Group 1"
+                                            },
+                                            "n1": {
+                                                "type": "integer",
+                                                "description": "Count of Group 1"
+                                            },
+                                            "mean2": {
+                                                "type": "number",
+                                                "description": "Mean of Group 2"
+                                            },
+                                            "std2": {
+                                                "type": "number",
+                                                "description": "StdDev of Group 2"
+                                            },
+                                            "n2": {
+                                                "type": "integer",
+                                                "description": "Count of Group 2"
+                                            },
+                                            "sample": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                },
+                                                "description": "Raw data for One-Sample test"
+                                            },
+                                            "popmean": {
+                                                "type": "number",
+                                                "description": "Population mean target for One-Sample test"
+                                            }
+                                        },
+                                        "example": {
+                                            "mean1": 142.5,
+                                            "std1": 20,
+                                            "n1": 50,
+                                            "mean2": 151.2,
+                                            "std2": 25,
+                                            "n2": 45
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    },
+                    "400": {
+                        "description": "Error"
+                    }
+                }
+            }
+        }
+    }
+}

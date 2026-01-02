@@ -1,0 +1,155 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Continuous Linear Solver",
+        "description": "A deterministic optimization engine for Continuous Linear Programming (LP). Use this tool for problems involving fractional resource allocation, blending, budgeting, or fluid distribution where variables can be non-integers. Backed by Google OR-Tools (GLOP).",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://linear-continuous-solver-37559127936.us-east1.run.app",
+            "description": "Production V0 Endpoint"
+        }
+    ],
+    "paths": {
+        "/": {
+            "post": {
+                "operationId": "solveLinearContinuous",
+                "summary": "Solve a continuous linear optimization problem.",
+                "description": "Takes a mathematical definition of a linear problem (variables, constraints, objective) and returns the optimal values. All variables are assumed to be continuous (float) and non-negative (0 to Infinity).",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SolverRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful optimization result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SolverResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input format or missing fields"
+                    },
+                    "500": {
+                        "description": "Server or Solver Runtime Error"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "SolverRequest": {
+                "type": "object",
+                "properties": {
+                    "variables": {
+                        "type": "array",
+                        "description": "A list of variable names involved in the problem.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1
+                    },
+                    "constraints": {
+                        "type": "array",
+                        "description": "A list of linear constraints applied to the variables.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "expression": {
+                                    "type": "object",
+                                    "description": "The linear expression map where keys are variable names and values are coefficients (e.g., {'x': 2.5, 'y': -1.0} represents 2.5x - 1.0y).",
+                                    "additionalProperties": {
+                                        "type": "number"
+                                    }
+                                },
+                                "lower_bound": {
+                                    "type": "number",
+                                    "description": "The minimum value for this expression (default: -Infinity). Use this for >= constraints."
+                                },
+                                "upper_bound": {
+                                    "type": "number",
+                                    "description": "The maximum value for this expression (default: +Infinity). Use this for <= constraints."
+                                }
+                            },
+                            "required": [
+                                "expression"
+                            ]
+                        }
+                    },
+                    "objective": {
+                        "type": "object",
+                        "description": "The objective function to optimize, mapping variable names to their coefficients.",
+                        "additionalProperties": {
+                            "type": "number"
+                        }
+                    },
+                    "direction": {
+                        "type": "string",
+                        "description": "Whether to minimize or maximize the objective function.",
+                        "enum": [
+                            "MAXIMIZE",
+                            "MINIMIZE"
+                        ],
+                        "default": "MAXIMIZE"
+                    }
+                },
+                "required": [
+                    "variables",
+                    "objective"
+                ]
+            },
+            "SolverResponse": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "OPTIMAL",
+                            "FEASIBLE",
+                            "INFEASIBLE_OR_UNBOUNDED",
+                            "ERROR"
+                        ]
+                    },
+                    "objective_value": {
+                        "type": "number",
+                        "nullable": true
+                    },
+                    "variables": {
+                        "type": "object",
+                        "description": "The optimized values for each variable.",
+                        "additionalProperties": {
+                            "type": "number"
+                        }
+                    },
+                    "sensitivity_analysis": {
+                        "type": "object",
+                        "description": "Reduced costs for sensitivity analysis (shadow prices).",
+                        "additionalProperties": {
+                            "type": "object",
+                            "properties": {
+                                "reduced_cost": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}
