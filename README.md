@@ -2,7 +2,7 @@
 
 > A generic AI agent interface with multi-LLM support and direct access to Coda's decision engine and analytics tools via MCP server integration.
 
-[![Version](https://img.shields.io/badge/version-0.1.0--dev-blue)]()
+[![Version](https://img.shields.io/badge/version-0.4.0--beta-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen)]()
 
@@ -24,6 +24,8 @@
 - **Observability**: Real-time token tracking, execution timing, decision counting, and tool success/failure monitoring.
 - **Chain of Thought**: Visibility into the agent's internal reasoning process.
 - 📊 **Analytics Dashboard**: Usage insights and tool utilization tracking
+- 📄 **File Analysis**: Upload and analyze PDF, CSV, Excel, and text files.
+- 👍 **Feedback System**: Integrated user feedback mechanism for continuous improvement.
 - 🎯 **Tool Evaluation**: Automatic assessment of tool usage quality
 - 🌳 **Thread Branching**: Explore alternative conversation paths
 - 📤 **Export & Share**: Share sessions and export conversations
@@ -143,6 +145,7 @@ coda-agent/
 - [Product Plan](./PRODUCT_PLAN.md) - Comprehensive product roadmap and sprint planning
 - [Technical Specification](./TECHNICAL_SPEC.md) - Architecture and implementation details
 - [Epic & Feature Backlog](./BACKLOG.md) - Detailed feature breakdown and user stories
+- [Implementation Summary](./IMPLEMENTATION_SUMMARY.md) - High-level architectural overview and status
 - [API Documentation](http://localhost:8000/docs) - Interactive API documentation (when running)
 
 ## Roadmap
