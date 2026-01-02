@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
-import { Bot, Send, Settings, History, Plus, MessageSquare, Trash2, GitBranch, BarChart2, Paperclip, X, FileText, Share2, Download, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { Bot, Send, Settings, History, Plus, MessageSquare, Trash2, GitBranch, BarChart2, Paperclip, X, FileText, Share2, Download, ThumbsUp, ThumbsDown, Key } from 'lucide-react'
 import { submitFeedback } from './api/feedback'
 import { uploadFile } from './api/files'
 import { useRef } from 'react'
@@ -21,6 +21,33 @@ function App() {
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
     const [health, setHealth] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(false)
+    const [showSettings, setShowSettings] = useState(false)
+    const [apiKeys, setApiKeys] = useState({
+        openai: localStorage.getItem('openai_api_key') || '',
+        anthropic: localStorage.getItem('anthropic_api_key') || '',
+        google: localStorage.getItem('google_api_key') || ''
+    })
+    const [selectedModel, setSelectedModel] = useState(localStorage.getItem('selected_model') || 'gpt-4')
+
+    // Temp state for modal
+    const [tempKeys, setTempKeys] = useState(apiKeys)
+    const [tempModel, setTempModel] = useState(selectedModel)
+
+    useEffect(() => {
+        setTempKeys(apiKeys)
+        setTempModel(selectedModel)
+    }, [apiKeys, selectedModel, showSettings])
+
+    const handleSaveSettings = () => {
+        setApiKeys(tempKeys)
+        setSelectedModel(tempModel)
+        localStorage.setItem('openai_api_key', tempKeys.openai)
+        localStorage.setItem('anthropic_api_key', tempKeys.anthropic)
+        localStorage.setItem('google_api_key', tempKeys.google)
+        localStorage.setItem('selected_model', tempModel)
+        setShowSettings(false)
+    }
+
     const [view, setView] = useState<'chat' | 'analytics'>('chat')
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -99,16 +126,59 @@ function App() {
             if (res.ok) {
                 const data = await res.json()
                 setCurrentSessionId(data.id)
-                // Map backend messages to UI format
-                // Backend: id, role, content...
-                const uiMessages = data.messages.map((m: any) => ({
-                    id: m.id,
-                    role: m.role,
-                    content: m.content || '',
-                    tokenUsage: m.token_count,
-                    executionTime: m.execution_time,
-                    decisionCount: m.decision_count
-                }))
+                const uiMessages: any[] = []
+
+                data.messages.forEach((m: any) => {
+                    if (m.role === 'user') {
+                        // Extract attachments from content
+                        const fileRegex = /\[Attached File: (.*?)\]\n([\s\S]*?)\n\[End Attachment\]/g;
+                        let content = m.content || '';
+                        const attachments = [];
+                        let match;
+
+                        // Reset regex
+                        fileRegex.lastIndex = 0;
+
+                        // We need to loop manually to strip correctly
+                        // Or just use split/replace logic
+                        const files = []
+                        let cleanContent = content
+
+                        while ((match = fileRegex.exec(content)) !== null) {
+                            files.push({ filename: match[1], content: match[2].trim() });
+                        }
+
+                        if (files.length > 0) {
+                            cleanContent = content.replace(fileRegex, '').trim();
+                        }
+
+                        uiMessages.push({
+                            id: m.id,
+                            role: m.role,
+                            content: cleanContent,
+                            attachments: files,
+                            tokenUsage: m.token_count
+                        });
+
+                    } else if (m.role === 'tool') {
+                        // Hide raw tool outputs from main stream
+                        // Optionally attach result to previous assistant message if needed for "Result" display
+                        // For now, hiding avoids the "raw text" issue
+                    } else {
+                        uiMessages.push({
+                            id: m.id,
+                            role: m.role,
+                            content: m.content || '',
+                            tokenUsage: m.token_count,
+                            executionTime: m.execution_time,
+                            decisionCount: m.decision_count,
+                            tool_calls: m.tool_calls,
+                            thoughts: m.feedback?.thoughts || m.thoughts,
+                            feedback: m.feedback
+                        })
+                    }
+                })
+
                 setMessages(uiMessages)
             }
         } catch (error) {
@@ -252,11 +322,14 @@ function App() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-OpenAI-API-Key': apiKeys.openai,
+                    'X-Anthropic-API-Key': apiKeys.anthropic,
+                    'X-Google-API-Key': apiKeys.google,
                 },
                 body: JSON.stringify({
                     session_id: currentSessionId, // Pass current session
                     messages: [{ role: 'user', content: serverContent }], // Only send new message (server handles history)
-                    model: 'gpt-4',
+                    model: selectedModel,
                     stream: true
                 }),
             })
@@ -406,33 +479,45 @@ function App() {
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-auto p-2 space-y-1">
-                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-2 mt-2">Recent Chats</div>
-                    {sessions.map(session => (
-                        <div
-                            key={session.id}
-                            onClick={() => { loadSession(session.id); setView('chat'); }}
-                            className={`group flex items-center justify-between p-2 rounded-md cursor-pointer text-sm truncate ${currentSessionId === session.id ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                                }`}
-                        >
-                            <div className="flex items-center gap-2 truncate">
-                                <MessageSquare className="h-4 w-4 shrink-0" />
-                                <span className="truncate">{session.title || 'Untitled Chat'}</span>
-                            </div>
-                            <button
-                                onClick={(e) => deleteSession(e, session.id)}
-                                className="opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity p-1"
-                            >
-                                <Trash2 className="h-3 w-3" />
-                            </button>
-                        </div>
-                    ))}
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                    <div className="px-4 mt-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Recent Chats
+                    </div>
 
-                    {sessions.length === 0 && (
-                        <div className="px-4 py-8 text-center text-gray-500 text-xs">
-                            No recent history
-                        </div>
-                    )}
+                    <div className="flex-1 overflow-y-auto px-2 space-y-1">
+                        {sessions.map((session) => (
+                            <div
+                                key={session.id}
+                                onClick={() => { loadSession(session.id); setView('chat'); }}
+                                className={`group flex items-center gap-2 p-2 rounded-md cursor-pointer mb-1 text-sm ${currentSessionId === session.id ? 'bg-gray-800 text-blue-400' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                    }`}
+                            >
+                                <MessageSquare className="h-4 w-4 shrink-0" />
+                                <span className="truncate flex-1">{session.title || 'Untitled Chat'}</span>
+                                <button
+                                    onClick={(e) => deleteSession(e, session.id)}
+                                    className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity"
+                                >
+                                    <Trash2 className="h-3 w-3" />
+                                </button>
+                            </div>
+                        ))}
+                        {sessions.length === 0 && (
+                            <div className="px-4 py-8 text-center text-gray-500 text-xs">
+                                No recent history
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="p-2 border-t border-gray-800">
+                        <button
+                            onClick={() => setShowSettings(true)}
+                            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors w-full p-2 rounded-md hover:bg-gray-800"
+                        >
+                            <Settings className="h-4 w-4" />
+                            <span className="text-sm">Settings</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-4 border-t border-gray-800">
@@ -523,6 +608,7 @@ function App() {
                                                 </div>
                                             </div>
                                         )}
+
                                         {msg.content}
                                         {(msg.tokenUsage || msg.executionTime || msg.id) && (
                                             <div className="text-[10px] text-gray-400 mt-1 mr-[-8px] flex justify-end opacity-70 gap-3">
@@ -631,6 +717,122 @@ function App() {
                                     <Send className="h-4 w-4" />
                                 </button>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Settings Dialog */}
+            {showSettings && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden border border-gray-700">
+                        <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+                            <h2 className="text-lg font-semibold dark:text-white flex items-center gap-2">
+                                <Settings className="h-5 w-5" />
+                                Settings
+                            </h2>
+                            <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-white">
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">
+                                    Default Model
+                                </label>
+                                <select
+                                    value={tempModel}
+                                    onChange={(e) => setTempModel(e.target.value)}
+                                    className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-sm text-gray-100 focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <optgroup label="OpenAI">
+                                        <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+                                        <option value="gpt-4">GPT-4</option>
+                                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                    </optgroup>
+                                    <optgroup label="Anthropic">
+                                        <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                                        <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                                    </optgroup>
+                                    <optgroup label="Google">
+                                        <option value="gemini-pro">Gemini Pro</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+
+                            <hr className="border-gray-700" />
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">
+                                    OpenAI API Key
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Key className="h-4 w-4 text-gray-400" />
+                                    </div>
+                                    <input
+                                        type="password"
+                                        value={tempKeys.openai}
+                                        onChange={(e) => setTempKeys({ ...tempKeys, openai: e.target.value })}
+                                        placeholder="sk-..."
+                                        className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 pl-10 pr-4 text-sm text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">
+                                    Anthropic API Key
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Key className="h-4 w-4 text-gray-400" />
+                                    </div>
+                                    <input
+                                        type="password"
+                                        value={tempKeys.anthropic}
+                                        onChange={(e) => setTempKeys({ ...tempKeys, anthropic: e.target.value })}
+                                        placeholder="sk-ant-..."
+                                        className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 pl-10 pr-4 text-sm text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">
+                                    Google Gemini API Key
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Key className="h-4 w-4 text-gray-400" />
+                                    </div>
+                                    <input
+                                        type="password"
+                                        value={tempKeys.google}
+                                        onChange={(e) => setTempKeys({ ...tempKeys, google: e.target.value })}
+                                        placeholder="AIza..."
+                                        className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 pl-10 pr-4 text-sm text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-gray-500 mt-1">
+                                Keys are stored locally in your browser. Leave blank to use server defaults (if configured).
+                            </p>
+                        </div>
+                        <div className="p-4 border-t border-gray-700 flex justify-end gap-2 bg-gray-900/50">
+                            <button
+                                onClick={() => setShowSettings(false)}
+                                className="px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveSettings}
+                                className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                            >
+                                Save Changes
+                            </button>
                         </div>
                     </div>
                 </div>

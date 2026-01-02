@@ -63,12 +63,12 @@ Build the foundational agent system that enables users to interact with LLM mode
 As a developer, I want to support multiple LLM providers so that users have flexibility in choosing their preferred model.
 
 **Acceptance Criteria**:
-- [ ] Abstract `BaseLLM` interface defined
-- [ ] OpenAI provider implemented (v0.1.0)
-- [ ] Anthropic provider implemented (v0.2.0)
-- [ ] Google provider implemented (v0.2.0)
-- [ ] Provider factory pattern working
-- [ ] BYOK (Bring Your Own Key) supported
+- [x] Abstract `BaseLLM` interface defined
+- [x] OpenAI provider implemented (v0.1.0)
+- [x] Anthropic provider implemented (v0.2.0)
+- [x] Google provider implemented (v0.2.0)
+- [x] Provider factory pattern working
+- [x] BYOK (Bring Your Own Key) supported
 - [ ] Hosted model option available
 - [ ] Unit tests for each provider
 

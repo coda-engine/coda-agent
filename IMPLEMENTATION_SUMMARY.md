@@ -17,6 +17,11 @@
 3. **Analytics Dashboard (E5)**
    - Complete implementation of usage, tool, and decision analytics.
 
+4. **Multi-Model & BYOK (F1.1)**
+   - Implemented dynamic routing for OpenAI, Anthropic, and Google.
+   - Added client-side API Key storage (BYOK).
+   - Enhanced message persistence to capture User Attachments and AI Thought Process across sessions.
+
 ### Roadmap Status
 - **Epics E1 - E6**: Completed.
 - **Epic E7 (Production Readiness)**: Pending (Next Step).

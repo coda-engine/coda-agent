@@ -228,7 +228,19 @@ Transform your MCP Server (solver/analytics tools) from a developer-only API int
     -   **F3.5**: Thread Merging (Planned).
     -   **F5.2**: Tool Analytics.
 
-### Release v0.4.1 - Analytics Dashboard
+### Release v0.4.2 - Multi-Provider & BYOK
+**Date**: 2026-01-02
+**Summary**: Expanded LLM support with Bring Your Own Key (BYOK) architecture and enhanced UI persistence.
+
+#### Features
+- **Multi-LLM Support**: Integrated OpenAI, Anthropic (Claude), and Google (Gemini) providers.
+- **BYOK Architecture**: Client-side storage for API keys; keys transmitted via secure headers.
+- **Model Selection**: User can switch between GPT-4, Claude 3 Opus, and Gemini Pro dynamically.
+- **Persistent Reasoning**: Thought process (CoT) is now captured and stored in message metadata, persisting across reloads.
+- **File Persistence**: File attachments are parsed and restored from history on session load.
+- **UI Improvements**: Refined sidebar layout, fixed font regressions, and streamlined tool output visibility.
+
+## Release v0.4.1 - Analytics Dashboard
 **Date**: 2026-01-01
 **Summary**: Initial implementation of the Analytics Dashboard (Epic E5).
 

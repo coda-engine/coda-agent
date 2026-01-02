@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Header
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -23,11 +23,25 @@ tracer = trace.get_tracer(__name__)
 @router.post("/stream")
 async def stream_chat(
     request: ChatRequest,
+    x_openai_api_key: str | None = Header(None, alias="X-OpenAI-API-Key"),
+    x_anthropic_api_key: str | None = Header(None, alias="X-Anthropic-API-Key"),
+    x_google_api_key: str | None = Header(None, alias="X-Google-API-Key"),
     db: AsyncSession = Depends(get_db)
 ):
     try:
-        # For now, we instantiate the provider per request
-        provider = OpenAIProvider()
+        # Provider Factory Logic
+        model_id = request.model.lower()
+        provider = None
+        
+        if "claude" in model_id:
+            from app.services.llm.anthropic import AnthropicProvider
+            provider = AnthropicProvider(api_key=x_anthropic_api_key)
+        elif "gemini" in model_id:
+            from app.services.llm.gemini import GoogleProvider
+            provider = GoogleProvider(api_key=x_google_api_key)
+        else:
+            # Default to OpenAI
+            provider = OpenAIProvider(api_key=x_openai_api_key)
         
         session_id = request.session_id
         session = None
@@ -88,6 +102,7 @@ async def stream_chat(
             total_tokens = 0
             start_time = time.time()
             decision_count = 0
+            accumulated_thoughts = []
             
             # Yield Session ID first
             yield f"data: {json.dumps({'session_id': str(session.id)})}\n\n"
@@ -176,6 +191,7 @@ async def stream_chat(
                             
                     elif event_type in ["thought", "tool_start"]:
                         if content:
+                            accumulated_thoughts.append(content)
                             yield f"data: {json.dumps({'thought': content})}\n\n"
                             
                     elif event_type == "usage":
@@ -217,7 +233,8 @@ async def stream_chat(
                     content=accumulated_response,
                     token_count=total_tokens,
                     execution_time=duration,
-                    decision_count=decision_count
+                    decision_count=decision_count,
+                    feedback={"thoughts": "\n".join(accumulated_thoughts)} if accumulated_thoughts else None
                 )
                 db_inner.add(db_msg)
                 await db_inner.commit()
